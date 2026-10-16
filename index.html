@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="A responsive Instagram-style photo sharing experience.">
+  <title>Instagram</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --text: #262626;
+      --muted: #737373;
+      --line: #dbdbdb;
+      --blue: #0095f6;
+      --page: #fafafa;
+      --sidebar-width: 245px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); background: var(--page); font-size: 14px; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .app { min-height: 100vh; }
+
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 5;
+      display: flex;
+      width: var(--sidebar-width);
+      flex-direction: column;
+      padding: 28px 12px 20px;
+      border-right: 1px solid var(--line);
+      background: #fff;
+    }
+    .brand {
+      margin: 0 0 30px;
+      padding: 0 12px;
+      font-family: "Brush Script MT", "Segoe Script", cursive;
+      font-size: 31px;
+      font-weight: 600;
+      letter-spacing: -1.5px;
+    }
+    .nav-list { display: grid; gap: 8px; }
+    .nav-item {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      gap: 16px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      transition: background .15s ease;
+    }
+    .nav-item:hover { background: #f2f2f2; }
+    .nav-item span { font-size: 15px; }
+    .nav-item.active span { font-weight: 700; }
+    .nav-item svg { width: 24px; height: 24px; flex: 0 0 auto; }
+    .nav-profile { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+    .more-link { margin-top: auto; }
+
+    .main-layout {
+      display: grid;
+      width: min(100% - var(--sidebar-width), 1100px);
+      grid-template-columns: minmax(0, 630px) 300px;
+      gap: 50px;
+      margin: 0 auto 0 calc(var(--sidebar-width) + (100% - var(--sidebar-width) - min(100% - var(--sidebar-width), 1100px)) / 2);
+      padding: 30px 20px 60px;
+    }
+    .feed { width: 100%; max-width: 470px; margin: 0 auto; }
+    .stories {
+      display: flex;
+      gap: 17px;
+      overflow-x: auto;
+      margin: 0 0 24px;
+      padding: 15px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      scrollbar-width: none;
+    }
+    .stories::-webkit-scrollbar { display: none; }
+    .story {
+      display: grid;
+      min-width: 62px;
+      justify-items: center;
+      gap: 6px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+    .story-ring {
+      display: grid;
+      width: 62px;
+      height: 62px;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(35deg, #feda75, #fa7e1e 35%, #d62976 65%, #962fbf 85%, #4f5bd5);
+    }
+    .story-ring img { width: 56px; height: 56px; border: 2px solid #fff; border-radius: 50%; object-fit: cover; }
+    .story-name { max-width: 64px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+
+    .post {
+      overflow: hidden;
+      margin-bottom: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .post-header { display: flex; height: 58px; align-items: center; gap: 10px; padding: 0 12px; }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+    }
+    .post-user { min-width: 0; flex: 1; font-size: 13px; font-weight: 650; }
+    .verified { color: var(--blue); font-size: 12px; }
+    .post-location { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; }
+    .icon-button {
+      display: inline-grid;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+    }
+    .icon-button:hover { background: #f6f6f6; }
+    .icon-button svg { width: 24px; height: 24px; }
+    .post-image-wrap { position: relative; background: #f0f0f0; }
+    .post-image { display: block; width: 100%; max-height: 610px; aspect-ratio: 1 / 1; object-fit: cover; }
+    .post-image.double-tap { animation: heart-pop .75s ease; }
+    @keyframes heart-pop {
+      0% { transform: scale(1); }
+      30% { transform: scale(.96); }
+      58% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+    .post-actions { display: flex; align-items: center; padding: 4px 8px 0; }
+    .post-actions .save-button { margin-left: auto; }
+    .liked { color: #ed4956; }
+    .liked svg { fill: #ed4956; stroke: #ed4956; }
+    .saved svg { fill: var(--text); }
+    .post-content { padding: 0 12px 12px; }
+    .likes { margin: 2px 0 7px; font-weight: 650; }
+    .caption { margin: 0 0 7px; line-height: 1.45; overflow-wrap: anywhere; }
+    .caption strong { margin-right: 4px; }
+    .view-comments { display: block; margin: 0 0 7px; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; }
+    .comment-list { display: grid; gap: 5px; margin: 5px 0 8px; }
+    .comment { margin: 0; line-height: 1.4; overflow-wrap: anywhere; }
+    .comment strong { margin-right: 4px; }
+    .post-time { color: var(--muted); font-size: 10px; letter-spacing: .3px; text-transform: uppercase; }
+    .comment-form { display: flex; gap: 10px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #efefef; }
+    .comment-input { min-width: 0; flex: 1; padding: 3px 0; border: 0; outline: none; background: transparent; }
+    .comment-submit { padding: 0; border: 0; background: transparent; color: var(--blue); font-weight: 650; cursor: pointer; }
+    .comment-submit:disabled { opacity: .45; cursor: default; }
+
+    .right-column { padding-top: 18px; }
+    .account-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .account-row .avatar { width: 44px; height: 44px; }
+    .account-info { min-width: 0; flex: 1; }
+    .account-name { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 650; }
+    .account-subtitle, .muted { color: var(--muted); font-size: 12px; }
+    .text-button { padding: 5px 0 5px 8px; border: 0; background: none; color: var(--blue); font-size: 11px; font-weight: 650; cursor: pointer; }
+    .suggestion-heading { display: flex; justify-content: space-between; margin: 0 0 12px; color: var(--muted); font-weight: 650; }
+    .suggestion-heading button { border: 0; background: none; font-size: 11px; font-weight: 650; cursor: pointer; }
+    .suggestion-row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+    .suggestion-row .avatar { width: 34px; height: 34px; }
+    .footer-links { margin-top: 28px; color: #c7c7c7; font-size: 11px; line-height: 1.8; }
+    .footer-links a:hover { text-decoration: underline; }
+    .copyright { margin-top: 14px; text-transform: uppercase; }
+    .empty-state { padding: 35px 10px; color: var(--muted); text-align: center; }
+
+    .toast {
+      position: fixed;
+      z-index: 20;
+      right: 20px;
+      bottom: 22px;
+      max-width: min(360px, calc(100vw - 40px));
+      padding: 12px 16px;
+      border-radius: 8px;
+      background: #262626;
+      color: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .toast.visible { opacity: 1; transform: translateY(0); }
+    .modal-backdrop {
+      position: fixed;
+      z-index: 15;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgb(0 0 0 / 55%);
+    }
+    .modal {
+      width: min(420px, 100%);
+      overflow: hidden;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 10px 40px rgb(0 0 0 / 25%);
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .modal-header h2 { margin: 0; font-size: 16px; }
+    .modal-body { padding: 24px; text-align: center; }
+    .modal-body p { color: var(--muted); line-height: 1.5; }
+    .primary-button { padding: 9px 15px; border: 0; border-radius: 8px; background: var(--blue); color: #fff; font-weight: 650; cursor: pointer; }
+    .primary-button:hover { background: #1877d2; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+
+    @media (max-width: 1050px) {
+      :root { --sidebar-width: 74px; }
+      .sidebar { align-items: center; padding-inline: 10px; }
+      .brand { overflow: hidden; width: 50px; margin: 0 0 30px; padding: 0; font-size: 0; text-align: center; }
+      .brand::after { content: "◎"; font-family: Arial, sans-serif; font-size: 32px; }
+      .nav-item { width: 48px; justify-content: center; padding: 0; }
+      .nav-item span { display: none; }
+      .nav-list { justify-items: center; }
+      .main-layout { width: min(100% - var(--sidebar-width), 980px); grid-template-columns: minmax(0, 630px); gap: 0; margin-left: calc(var(--sidebar-width) + (100% - var(--sidebar-width) - min(100% - var(--sidebar-width), 980px)) / 2); }
+      .right-column { display: none; }
+    }
+    @media (max-width: 600px) {
+      body { background: #fff; }
+      .sidebar { inset: 0 0 auto; width: 100%; height: 54px; flex-direction: row; justify-content: space-between; padding: 0 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { width: auto; margin: 0; font-size: 26px; text-align: left; }
+      .brand::after { content: none; }
+      .nav-list { display: flex; align-items: center; gap: 8px; }
+      .nav-list .nav-item { display: none; }
+      .nav-list .nav-item[data-nav="home"], .nav-list .nav-item[data-nav="create"], .nav-list .nav-item[data-nav="profile"] { display: grid; width: 38px; height: 44px; }
+      .nav-list .nav-item[data-nav="profile"] { display: none; }
+      .more-link { display: none; }
+      .main-layout { display: block; width: 100%; margin: 0; padding: 68px 0 64px; }
+      .feed { max-width: none; }
+      .stories { gap: 14px; margin: 0 0 12px; padding: 10px 12px 12px; border-right: 0; border-left: 0; border-radius: 0; }
+      .post { margin-bottom: 12px; border-right: 0; border-left: 0; border-radius: 0; }
+      .post-image { max-height: none; }
+      .mobile-bottom-nav {
+        position: fixed;
+        z-index: 6;
+        inset: auto 0 0;
+        display: flex;
+        height: 52px;
+        align-items: center;
+        justify-content: space-around;
+        border-top: 1px solid var(--line);
+        background: #fff;
+      }
+      .mobile-bottom-nav .icon-button { width: 42px; height: 42px; }
+      .mobile-bottom-nav img { width: 25px; height: 25px; border-radius: 50%; object-fit: cover; }
+      .toast { right: 12px; bottom: 64px; }
+    }
+    @media (min-width: 601px) { .mobile-bottom-nav { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#" aria-label="Instagram home">Instagram</a>
+      <nav class="nav-list">
+        <button class="nav-item active" data-nav="home" aria-label="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span>
+        </button>
+        <button class="nav-item" data-nav="search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><span>Search</span>
+        </button>
+        <button class="nav-item" data-nav="explore" aria-label="Explore">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m14.5 9.5-2 5-5 2 2-5z"/></svg><span>Explore</span>
+        </button>
+        <button class="nav-item" data-nav="reels" aria-label="Reels">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m10 8 6 4-6 4zM3.5 8h17M8 3.5l3 4.5M15 3.5l3 4.5"/></svg><span>Reels</span>
+        </button>
+        <button class="nav-item" data-nav="messages" aria-label="Messages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg><span>Messages</span>
+        </button>
+        <button class="nav-item" data-nav="notifications" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span>Notifications</span>
+        </button>
+        <button class="nav-item" data-nav="create" aria-label="Create post">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg><span>Create</span>
+        </button>
+        <button class="nav-item" data-nav="profile" aria-label="Profile">
+          <img class="nav-profile" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=faces" alt=""><span>Profile</span>
+        </button>
+      </nav>
+      <button class="nav-item more-link" data-nav="more" aria-label="More">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>More</span>
+      </button>
+    </aside>
+
+    <main class="main-layout">
+      <section class="feed" aria-label="Feed">
+        <div class="stories" aria-label="Stories">
+          <button class="story" data-user="Your story">
+            <span class="story-ring"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=faces" alt=""></span>
+            <span class="story-name">Your story</span>
+          </button>
+          <button class="story" data-user="maya.travels">
+            <span class="story-ring"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=faces" alt=""></span>
+            <span class="story-name">maya.travels</span>
+          </button>
+          <button class="story" data-user="leo.jpg">
+            <span class="story-ring"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop&crop=faces" alt=""></span>
+            <span class="story-name">leo.jpg</span>
+          </button>
+          <button class="story" data-user="sophia">
+            <span class="story-ring"><img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&h=120&fit=crop&crop=faces" alt=""></span>
+            <span class="story-name">sophia</span>
+          </button>
+          <button class="story" data-user="noah.outdoors">
+            <span class="story-ring"><img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop&crop=faces" alt=""></span>
+            <span class="story-name">noah.outdoors</span>
+          </button>
+          <button class="story" data-user="ella.creates">
+            <span class="story-ring"><img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=120&h=120&fit=crop&crop=faces" alt=""></span>
+            <span class="story-name">ella.creates</span>
+          </button>
+          <button class="story" data-user="coast.days">
+            <span class="story-ring"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=120&h=120&fit=crop&crop=faces" alt=""></span>
+            <span class="story-name">coast.days</span>
+          </button>
+        </div>
+
+        <article class="post" data-post-id="post-1">
+          <header class="post-header">
+            <img class="avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces" alt="">
+            <div class="post-user">maya.travels <span class="verified" aria-label="Verified">●</span><span class="post-location">Big Sur, California</span></div>
+            <button class="icon-button more-button" aria-label="More options">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+            </button>
+          </header>
+          <div class="post-image-wrap">
+            <img class="post-image" src="https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=1000&h=1000&fit=crop&auto=format" alt="A winding road through a sunlit forest">
+          </div>
+          <div class="post-actions">
+            <button class="icon-button like-button" aria-label="Like post">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"/></svg>
+            </button>
+            <button class="icon-button comment-focus" aria-label="Comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg>
+            </button>
+            <button class="icon-button share-button" aria-label="Share post">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7zM22 2 11 13"/></svg>
+            </button>
+            <button class="icon-button save-button" aria-label="Save post">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17l-6-4-6 4z"/></svg>
+            </button>
+          </div>
+          <div class="post-content">
+            <p class="likes" data-likes="2486">2,486 likes</p>
+            <p class="caption"><strong>maya.travels</strong>Taking the long way, always. 🌲☀️</p>
+            <button class="view-comments">View all 38 comments</button>
+            <div class="comment-list" hidden></div>
+            <time class="post-time" datetime="2026-10-15">2 days ago</time>
+            <form class="comment-form">
+              <label class="sr-only" for="comment-post-1">Add a comment</label>
+              <input class="comment-input" id="comment-post-1" type="text" placeholder="Add a comment..." maxlength="220" autocomplete="off">
+              <button class="comment-submit" type="submit" disabled>Post</button>
+            </form>
+          </div>
+        </article>
+
+        <article class="post" data-post-id="post-2">
+          <header class="post-header">
+            <img class="avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces" alt="">
+            <div class="post-user">leo.jpg<span class="post-location">Brooklyn, New York</span></div>
+            <button class="icon-button more-button" aria-label="More options">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+            </button>
+          </header>
+          <div class="post-image-wrap">
+            <img class="post-image" src="https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=1000&h=1000&fit=crop&auto=format" alt="A city skyline glowing at dusk">
+          </div>
+          <div class="post-actions">
+            <button class="icon-button like-button" aria-label="Like post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"/></svg></button>
+            <button class="icon-button comment-focus" aria-label="Comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg></button>
+            <button class="icon-button share-button" aria-label="Share post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7zM22 2 11 13"/></svg></button>
+            <button class="icon-button save-button" aria-label="Save post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17l-6-4-6 4z"/></svg></button>
+          </div>
+          <div class="post-content">
+            <p class="likes" data-likes="912">912 likes</p>
+            <p class="caption"><strong>leo.jpg</strong>Last light on the way home. 🌆</p>
+            <button class="view-comments">View all 12 comments</button>
+            <div class="comment-list" hidden></div>
+            <time class="post-time" datetime="2026-10-16">1 day ago</time>
+            <form class="comment-form">
+              <label class="sr-only" for="comment-post-2">Add a comment</label>
+              <input class="comment-input" id="comment-post-2" type="text" placeholder="Add a comment..." maxlength="220" autocomplete="off">
+              <button class="comment-submit" type="submit" disabled>Post</button>
+            </form>
+          </div>
+        </article>
+
+        <article class="post" data-post-id="post-3">
+          <header class="post-header">
+            <img class="avatar" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&h=100&fit=crop&crop=faces" alt="">
+            <div class="post-user">sophia<span class="post-location">Amalfi Coast, Italy</span></div>
+            <button class="icon-button more-button" aria-label="More options">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+            </button>
+          </header>
+          <div class="post-image-wrap">
+            <img class="post-image" src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1000&h=1000&fit=crop&auto=format" alt="Colorful coastal buildings overlooking the sea">
+          </div>
+          <div class="post-actions">
+            <button class="icon-button like-button" aria-label="Like post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"/></svg></button>
+            <button class="icon-button comment-focus" aria-label="Comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg></button>
+            <button class="icon-button share-button" aria-label="Share post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7zM22 2 11 13"/></svg></button>
+            <button class="icon-button save-button" aria-label="Save post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17l-6-4-6 4z"/></svg></button>
+          </div>
+          <div class="post-content">
+            <p class="likes" data-likes="3204">3,204 likes</p>
+            <p class="caption"><strong>sophia</strong>Somewhere between the sea and the sky. 💙</p>
+            <button class="view-comments">View all 51 comments</button>
+            <div class="comment-list" hidden></div>
+            <time class="post-time" datetime="2026-10-17">5 hours ago</time>
+            <form class="comment-form">
+              <label class="sr-only" for="comment-post-3">Add a comment</label>
+              <input class="comment-input" id="comment-post-3" type="text" placeholder="Add a comment..." maxlength="220" autocomplete="off">
+              <button class="comment-submit" type="submit" disabled>Post</button>
+            </form>
+          </div>
+        </article>
+      </section>
+
+      <aside class="right-column" aria-label="Suggestions">
+        <div class="account-row">
+          <img class="avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces" alt="">
+          <div class="account-info"><a class="account-name" href="#">your_username</a><span class="account-subtitle">Your Name</span></div>
+          <button class="text-button" data-action="switch">Switch</button>
+        </div>
+        <div class="suggestion-heading"><span>Suggested for you</span><button data-action="see-all">See All</button></div>
+        <div class="suggestion-row">
+          <img class="avatar" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=faces" alt="">
+          <div class="account-info"><a class="account-name" href="#">noah.outdoors</a><span class="account-subtitle">Followed by maya.travels</span></div>
+          <button class="text-button follow-button">Follow</button>
+        </div>
+        <div class="suggestion-row">
+          <img class="avatar" src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=100&h=100&fit=crop&crop=faces" alt="">
+          <div class="account-info"><a class="account-name" href="#">ella.creates</a><span class="account-subtitle">New to Instagram</span></div>
+          <button class="text-button follow-button">Follow</button>
+        </div>
+        <div class="suggestion-row">
+          <img class="avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces" alt="">
+          <div class="account-info"><a class="account-name" href="#">the.weekend.edit</a><span class="account-subtitle">Suggested for you</span></div>
+          <button class="text-button follow-button">Follow</button>
+        </div>
+        <footer class="footer-links">
+          <div><a href="#">About</a> · <a href="#">Help</a> · <a href="#">Press</a> · <a href="#">API</a> · <a href="#">Jobs</a> · <a href="#">Privacy</a> · <a href="#">Terms</a></div>
+          <div class="copyright">© 2026 INSTAGRAM FROM META</div>
+        </footer>
+      </aside>
+    </main>
+
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+      <button class="icon-button" data-nav="home" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></button>
+      <button class="icon-button" data-nav="search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button>
+      <button class="icon-button" data-nav="reels" aria-label="Reels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m10 8 6 4-6 4zM3.5 8h17"/></svg></button>
+      <button class="icon-button" data-nav="create" aria-label="Create post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg></button>
+      <button class="icon-button" data-nav="profile" aria-label="Profile"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=faces" alt=""></button>
+    </nav>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop" id="create-modal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal-header"><h2 id="modal-title">Create a post</h2><button class="icon-button modal-close" aria-label="Close dialog">×</button></header>
+      <div class="modal-body">
+        <p>Choose a photo to share with your friends.</p>
+        <button class="primary-button choose-photo">Select from computer</button>
+        <input class="sr-only file-input" type="file" accept="image/*">
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const toast = document.querySelector(".toast");
+      const modal = document.querySelector("#create-modal");
+      let toastTimer;
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 2400);
+      }
+
+      function toggleLike(button, post, animate) {
+        const likes = post.querySelector(".likes");
+        const current = Number(likes.dataset.likes);
+        const liked = button.classList.toggle("liked");
+        const count = current + (liked ? 1 : -1);
+        likes.dataset.likes = String(count);
+        likes.textContent = `${count.toLocaleString()} likes`;
+        button.setAttribute("aria-label", liked ? "Unlike post" : "Like post");
+        if (animate) {
+          const image = post.querySelector(".post-image");
+          image.classList.remove("double-tap");
+          void image.offsetWidth;
+          image.classList.add("double-tap");
+        }
+      }
+
+      document.querySelectorAll(".post").forEach((post) => {
+        const likeButton = post.querySelector(".like-button");
+        likeButton.addEventListener("click", () => toggleLike(likeButton, post, false));
+        post.querySelector(".post-image").addEventListener("dblclick", () => {
+          if (!likeButton.classList.contains("liked")) toggleLike(likeButton, post, true);
+        });
+
+        const commentInput = post.querySelector(".comment-input");
+        const submitButton = post.querySelector(".comment-submit");
+        const commentList = post.querySelector(".comment-list");
+        commentInput.addEventListener("input", () => {
+          submitButton.disabled = commentInput.value.trim().length === 0;
+        });
+        post.querySelector(".comment-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          const text = commentInput.value.trim();
+          if (!text) return;
+          const comment = document.createElement("p");
+          comment.className = "comment";
+          const username = document.createElement("strong");
+          username.textContent = "your_username";
+          comment.append(username, document.createTextNode(text));
+          commentList.append(comment);
+          commentList.hidden = false;
+          post.querySelector(".view-comments").textContent = "Hide comments";
+          commentInput.value = "";
+          submitButton.disabled = true;
+        });
+        post.querySelector(".view-comments").addEventListener("click", (event) => {
+          commentList.hidden = !commentList.hidden;
+          event.currentTarget.textContent = commentList.hidden ? "View comments" : "Hide comments";
+          if (!commentList.hidden) commentInput.focus();
+        });
+        post.querySelector(".comment-focus").addEventListener("click", () => commentInput.focus());
+        post.querySelector(".save-button").addEventListener("click", (event) => {
+          const button = event.currentTarget;
+          const saved = button.classList.toggle("saved");
+          button.setAttribute("aria-label", saved ? "Remove saved post" : "Save post");
+          showToast(saved ? "Post saved" : "Post removed from saved");
+        });
+        post.querySelector(".share-button").addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            showToast("Link copied to clipboard");
+          } catch {
+            showToast("Sharing isn't available in this browser");
+          }
+        });
+        post.querySelector(".more-button").addEventListener("click", () => showToast("More post options"));
+      });
+
+      document.querySelectorAll(".story").forEach((story) => {
+        story.addEventListener("click", () => showToast(`Opening ${story.dataset.user}'s story`));
+      });
+      document.querySelectorAll(".follow-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const following = button.textContent === "Following";
+          button.textContent = following ? "Follow" : "Following";
+          showToast(following ? "Unfollowed account" : "You're now following this account");
+        });
+      });
+      document.querySelectorAll("[data-nav]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const name = button.dataset.nav;
+          if (name === "create") {
+            modal.hidden = false;
+            modal.querySelector(".choose-photo").focus();
+          } else if (name !== "home") {
+            showToast(`${name.charAt(0).toUpperCase()}${name.slice(1)} is a demo in this page`);
+          }
+        });
+      });
+
+      function closeModal() {
+        modal.hidden = true;
+      }
+      modal.querySelector(".modal-close").addEventListener("click", closeModal);
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) closeModal();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !modal.hidden) closeModal();
+      });
+      const fileInput = modal.querySelector(".file-input");
+      modal.querySelector(".choose-photo").addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files.length) {
+          showToast(`Selected ${fileInput.files[0].name}. Publishing needs a backend.`);
+          closeModal();
+        }
+      });
+      document.querySelectorAll('[data-action="switch"], [data-action="see-all"]').forEach((button) => {
+        button.addEventListener("click", () => showToast("This demo doesn't connect to an account service"));
+      });
+    })();
+  </script>
+</body>
+</html>
